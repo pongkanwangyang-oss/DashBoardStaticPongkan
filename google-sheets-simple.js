@@ -29,21 +29,21 @@ async function loadFromGoogleSheets() {
         if (!row[0] || row[0] === '') return null; // ข้ามแถวว่าง
         
         return {
-          id: row[0] || `INC-${index}`,
-          date: parseDateFromSheet(row[1]),
-          type: row[2] || 'accident',
-          location: row[3] || 'หมู่ 1',
-          victimName:  row[4] || '',
-          houseNumber: row[5] || '',
-          victimPhone: row[6] || '',
+          id:           row[0] || `INC-${index}`,
+          date:         parseDateFromSheet(row[1]),
+          type:         row[2] || 'accident',
+          location:     row[3] || 'หมู่ 1',
+          victimName:   row[4] || '',
+          houseNumber:  (row[5] || '').replace(/^'/, ''),
+          victimPhone:  row[6] || '',
           victims:      parseInt(row[7]) || 1,
           status:       normalizeStatus(row[8]),
           responseTime: parseInt(row[9]) || 15,
           details:      row[10] || '',
           waterTrucks:  parseInt(row[11]) || 0,
           waterVolume:  parseInt(row[12]) || 0,
-          lat: parseFloat(row[13]) || null,
-          lng: parseFloat(row[14]) || null
+          lat:          parseFloat(row[13]) || null,
+          lng:          parseFloat(row[14]) || null
         };
       })
       .filter(inc => inc !== null)
@@ -84,19 +84,24 @@ function parseDateFromSheet(str) {
 function parseCSV(csvText) {
   const lines = csvText.split('\n');
   const result = [];
-  
+
   for (let line of lines) {
     if (line.trim() === '') continue;
-    
+
     const values = [];
     let currentValue = '';
     let inQuotes = false;
-    
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      
       if (char === '"') {
-        inQuotes = !inQuotes;
+        // handle escaped quotes ""
+        if (inQuotes && line[i + 1] === '"') {
+          currentValue += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
       } else if (char === ',' && !inQuotes) {
         values.push(currentValue.trim());
         currentValue = '';
@@ -104,11 +109,10 @@ function parseCSV(csvText) {
         currentValue += char;
       }
     }
-    
     values.push(currentValue.trim());
     result.push(values);
   }
-  
+
   return result;
 }
 
@@ -127,7 +131,7 @@ async function saveToGoogleSheets(incident) {
       incident.type,
       incident.location,
       incident.victimName  || '',
-      incident.houseNumber || '',
+      "'" + (incident.houseNumber || ''),  // apostrophe นำหน้าป้องกัน Sheets แปลงเป็น Date
       incident.victimPhone || '',
       incident.victims,
       incident.status,

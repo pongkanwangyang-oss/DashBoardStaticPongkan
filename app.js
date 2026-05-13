@@ -192,6 +192,10 @@ function bindEvents() {
     closePdfModal();
     exportPDF();
   });
+  document.getElementById('pdfModalDownload').addEventListener('click', () => {
+    closePdfModal();
+    downloadPDF();
+  });
   document.querySelectorAll('[data-pdf-range]').forEach(btn => {
     btn.addEventListener('click', () => {
       const range = parseInt(btn.dataset.pdfRange);
@@ -541,7 +545,9 @@ function renderTable() {
     const statusMap = { resolved: ['badge-resolved', 'เสร็จสิ้น'], ongoing: ['badge-ongoing', 'กำลังดำเนินการ'], critical: ['badge-critical', 'มีการรับแจ้งเหตุ'] };
     const [cls, label] = statusMap[inc.status] || ['', inc.status];
     const waterInfo = inc.type === 'water' ? ` (${(inc.waterVolume/1000).toFixed(1)}k ล.)` : '';
-    const victimInfo = inc.victimName ? `${inc.victimName} (${inc.houseNumber})` : `${inc.victims.toLocaleString('th-TH')} ราย`;
+    const victimInfo = inc.victimName 
+      ? `${inc.victimName}${inc.houseNumber ? ` (${inc.houseNumber})` : ''}` 
+      : `${inc.victims.toLocaleString('th-TH')} ราย`;
     const statusButtons = getStatusButtons(inc);
     return `
       <tr>
@@ -654,7 +660,7 @@ function renderMap() {
     });
 
     const statusLabel = { resolved: 'เสร็จสิ้น', ongoing: 'กำลังดำเนินการ', critical: '⚠️ มีการรับแจ้งเหตุ' };
-    const victimInfo = inc.victimName ? `👤 ${inc.victimName}<br>🏠 ${inc.houseNumber}<br>${inc.victimPhone ? `📞 ${inc.victimPhone}<br>` : ''}` : '';
+    const victimInfo = inc.victimName ? `👤 ${inc.victimName}${inc.houseNumber ? `<br>🏠 ${inc.houseNumber}` : ''}<br>${inc.victimPhone ? `📞 ${inc.victimPhone}<br>` : ''}` : '';
     marker.bindPopup(`
       <strong>${icon} ${DISASTER_TYPES[inc.type].label}</strong><br>
       📍 ${inc.location}<br>
@@ -682,6 +688,25 @@ function openPdfModal() {
 }
 function closePdfModal() {
   document.getElementById('pdfModal').classList.remove('open');
+}
+
+function getPdfHtml() {
+  // ใช้ร่วมกันระหว่าง print และ download
+  return exportPDF(true);
+}
+
+function downloadPDF() {
+  const html = exportPDF(true);
+  if (!html) return;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const fromDate = new Date(document.getElementById('pdfDateFrom').value);
+  const dateStr  = isNaN(fromDate) ? formatDateInput(new Date()) : formatDateInput(fromDate);
+  a.href     = url;
+  a.download = `รายงานสาธารณภัย_${dateStr}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ---- Add Incident Modal ----
@@ -1040,7 +1065,7 @@ function goToLatestIncident() {
 }
 
 // ---- Export PDF (Print Window) ----
-function exportPDF() {
+function exportPDF(returnHtml = false) {
   const orgName   = document.getElementById('orgName').textContent;
   const fromDate  = new Date(document.getElementById('pdfDateFrom').value);
   const toDate    = new Date(document.getElementById('pdfDateTo').value);
@@ -1184,10 +1209,10 @@ function exportPDF() {
 </body>
 </html>`;
 
+  if (returnHtml) return html;
   const win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
-  // คืน focus กลับหน้าหลักหลัง print
   win.addEventListener('afterprint', () => { win.close(); window.focus(); });
   win.addEventListener('focus', () => { setTimeout(() => window.focus(), 300); });
 }
