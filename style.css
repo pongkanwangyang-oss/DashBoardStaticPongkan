@@ -57,21 +57,16 @@ body {
 .header-flag {
   display: flex;
   align-items: center;
-  padding: 0 1rem;
-  background: rgba(0,0,0,0.15);
+  padding: 0;
+  background: transparent;
 }
-.flag-th {
-  display: flex;
-  flex-direction: column;
-  width: 36px;
-  height: 24px;
-  border-radius: 2px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.3);
+
+.header-logo {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
-.flag-red   { background: #c0392b; flex: 1; }
-.flag-white { background: #fff;    flex: 1; }
-.flag-blue  { background: #1a3a6b; flex: 2; }
 
 .header-title {
   padding: 0.75rem 1rem;
