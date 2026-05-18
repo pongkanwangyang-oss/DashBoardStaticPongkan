@@ -80,6 +80,21 @@ function bindEvents() {
   document.getElementById('tvExit').addEventListener('click', toggleTvMode);
 
   document.getElementById('exportBtn').addEventListener('click', exportCSV);
+
+  // ค้นหาในตาราง
+  document.getElementById('tableSearch').addEventListener('input', renderTable);
+
+  // ค้นหาในแมพ
+  document.getElementById('mapSearch').addEventListener('input', renderMap);
+
+  // Detail Modal
+  document.getElementById('detailModalClose').addEventListener('click', () => {
+    document.getElementById('incidentDetailModal').classList.remove('open');
+  });
+  document.getElementById('incidentDetailModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('incidentDetailModal'))
+      document.getElementById('incidentDetailModal').classList.remove('open');
+  });
   document.getElementById('pdfBtn').addEventListener('click', openPdfModal);
 
   // Add Incident Modal
@@ -191,6 +206,10 @@ function bindEvents() {
   document.getElementById('pdfModalConfirm').addEventListener('click', () => {
     closePdfModal();
     exportPDF();
+  });
+  document.getElementById('pdfModalDownload').addEventListener('click', () => {
+    closePdfModal();
+    downloadPDF();
   });
   document.querySelectorAll('[data-pdf-range]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -532,8 +551,22 @@ function renderResponseChart() {
 
 // ---- Table ----
 function renderTable() {
-  const tbody = document.getElementById('incidentTableBody');
-  const rows  = filteredData.slice(0, 50);
+  const tbody   = document.getElementById('incidentTableBody');
+  const keyword = (document.getElementById('tableSearch')?.value || '').trim().toLowerCase();
+
+  let rows = filteredData;
+
+  // กรองตาม keyword
+  if (keyword) {
+    rows = rows.filter(inc => {
+      const type    = DISASTER_TYPES[inc.type]?.label || '';
+      const status  = inc.status === 'resolved' ? 'เสร็จสิ้น' : inc.status === 'ongoing' ? 'กำลังดำเนินการ' : 'มีการรับแจ้งเหตุ';
+      return [inc.location, inc.victimName, inc.houseNumber, inc.victimPhone, inc.details, type, status]
+        .some(v => (v || '').toLowerCase().includes(keyword));
+    });
+  }
+
+  rows = rows.slice(0, 50);
 
   tbody.innerHTML = rows.map(inc => {
     const dt = inc.date.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
@@ -541,21 +574,54 @@ function renderTable() {
     const statusMap = { resolved: ['badge-resolved', 'เสร็จสิ้น'], ongoing: ['badge-ongoing', 'กำลังดำเนินการ'], critical: ['badge-critical', 'มีการรับแจ้งเหตุ'] };
     const [cls, label] = statusMap[inc.status] || ['', inc.status];
     const waterInfo = inc.type === 'water' ? ` (${(inc.waterVolume/1000).toFixed(1)}k ล.)` : '';
-    const victimInfo = inc.victimName ? `${inc.victimName} (${inc.houseNumber})` : `${inc.victims.toLocaleString('th-TH')} ราย`;
+    const victimInfo = inc.victimName 
+      ? `${inc.victimName}${inc.houseNumber ? ` (${inc.houseNumber})` : ''}` 
+      : `${inc.victims.toLocaleString('th-TH')} ราย`;
     const statusButtons = getStatusButtons(inc);
     return `
-      <tr>
+      <tr class="table-row-clickable" onclick="showIncidentDetail('${inc.id}')">
         <td>${dt}</td>
         <td>${type.icon} ${type.label}</td>
         <td>${inc.location}</td>
         <td>${victimInfo}${waterInfo}</td>
         <td>${inc.responseTime} นาที</td>
         <td><span class="badge ${cls}">${label}</span></td>
-        <td>${statusButtons}</td>
+        <td onclick="event.stopPropagation()">${statusButtons}</td>
       </tr>`;
   }).join('');
 }
 
+
+// ---- Incident Detail Modal ----
+function showIncidentDetail(incidentId) {
+  const inc = ALL_INCIDENTS.find(i => i.id === incidentId);
+  if (!inc) return;
+
+  const type = DISASTER_TYPES[inc.type];
+  const statusMap = { resolved: ['badge-resolved', 'เสร็จสิ้น'], ongoing: ['badge-ongoing', 'กำลังดำเนินการ'], critical: ['badge-critical', 'มีการรับแจ้งเหตุ'] };
+  const [cls, label] = statusMap[inc.status] || ['', inc.status];
+  const coordsInfo = (inc.lat && inc.lng)
+    ? `<div class="detail-row"><span class="detail-label">📌 พิกัด</span><span>${inc.lat.toFixed(6)}, ${inc.lng.toFixed(6)}</span></div>
+       <div class="detail-row"><a href="https://www.google.com/maps?q=${inc.lat},${inc.lng}" target="_blank" style="color:var(--accent)">🗺️ เปิดใน Google Maps</a></div>`
+    : '';
+
+  document.getElementById('detailTitle').textContent = `${type.icon} ${type.label} — ${inc.location}`;
+  document.getElementById('detailModalBody').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-row"><span class="detail-label">🗓️ วันที่/เวลา</span><span>${inc.date.toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' })}</span></div>
+      <div class="detail-row"><span class="detail-label">🏘️ หมู่บ้าน</span><span>${inc.location}</span></div>
+      ${inc.victimName ? `<div class="detail-row"><span class="detail-label">👤 ชื่อผู้ประสบภัย</span><span>${inc.victimName}</span></div>` : ''}
+      ${inc.houseNumber ? `<div class="detail-row"><span class="detail-label">🏠 บ้านเลขที่</span><span>${inc.houseNumber}</span></div>` : ''}
+      ${inc.victimPhone ? `<div class="detail-row"><span class="detail-label">📞 เบอร์โทร</span><span><a href="tel:${inc.victimPhone}" style="color:var(--accent)">${inc.victimPhone}</a></span></div>` : ''}
+      <div class="detail-row"><span class="detail-label">👥 จำนวนผู้ประสบภัย</span><span>${inc.victims.toLocaleString('th-TH')} ราย</span></div>
+      <div class="detail-row"><span class="detail-label">⏱️ เวลาตอบสนอง</span><span>${inc.responseTime} นาที</span></div>
+      <div class="detail-row"><span class="detail-label">📊 สถานะ</span><span class="badge ${cls}">${label}</span></div>
+      ${inc.details ? `<div class="detail-row"><span class="detail-label">📝 รายละเอียด</span><span>${inc.details}</span></div>` : ''}
+      ${coordsInfo}
+    </div>
+  `;
+  document.getElementById('incidentDetailModal').classList.add('open');
+}
 
 // ---- Export CSV ----
 function exportCSV() {
@@ -626,8 +692,21 @@ function renderMap() {
   mapMarkers.forEach(m => m.remove());
   mapMarkers = [];
 
+  const keyword = (document.getElementById('mapSearch')?.value || '').trim().toLowerCase();
+
+  // กรองตาม keyword ถ้ามี
+  let mapData = filteredData;
+  if (keyword) {
+    mapData = mapData.filter(inc => {
+      const type   = DISASTER_TYPES[inc.type]?.label || '';
+      const status = inc.status === 'resolved' ? 'เสร็จสิ้น' : inc.status === 'ongoing' ? 'กำลังดำเนินการ' : 'มีการรับแจ้งเหตุ';
+      return [inc.location, inc.victimName, inc.houseNumber, inc.victimPhone, inc.details, type, status]
+        .some(v => (v || '').toLowerCase().includes(keyword));
+    });
+  }
+
   // แสดงเฉพาะ 200 รายการล่าสุดเพื่อประสิทธิภาพ
-  const recent = filteredData.slice(0, 200);
+  const recent = mapData.slice(0, 200);
 
   recent.forEach(inc => {
     // ใช้พิกัดจริงถ้ามี ไม่งั้นใช้พิกัดหมู่บ้าน + กระจายเล็กน้อย
@@ -654,7 +733,8 @@ function renderMap() {
     });
 
     const statusLabel = { resolved: 'เสร็จสิ้น', ongoing: 'กำลังดำเนินการ', critical: '⚠️ มีการรับแจ้งเหตุ' };
-    const victimInfo = inc.victimName ? `👤 ${inc.victimName}<br>🏠 ${inc.houseNumber}<br>${inc.victimPhone ? `📞 ${inc.victimPhone}<br>` : ''}` : '';
+    const victimInfo = inc.victimName ? `👤 ${inc.victimName}${inc.houseNumber ? `<br>🏠 ${inc.houseNumber}` : ''}<br>${inc.victimPhone ? `📞 ${inc.victimPhone}<br>` : ''}` : '';
+    const coordsInfo = (lat && lng) ? `<br>📌 ${lat.toFixed(6)}, ${lng.toFixed(6)}<br><a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:#4f8ef7">🗺️ เปิดใน Google Maps</a>` : '';
     marker.bindPopup(`
       <strong>${icon} ${DISASTER_TYPES[inc.type].label}</strong><br>
       📍 ${inc.location}<br>
@@ -663,6 +743,7 @@ function renderMap() {
       👥 ${inc.victims} ราย &nbsp;|&nbsp; ⏱️ ${inc.responseTime} นาที<br>
       สถานะ: ${statusLabel[inc.status] || inc.status}
       ${inc.details ? `<br><br>📝 ${inc.details}` : ''}
+      ${coordsInfo}
     `);
 
     marker.addTo(incidentMap);
@@ -682,6 +763,25 @@ function openPdfModal() {
 }
 function closePdfModal() {
   document.getElementById('pdfModal').classList.remove('open');
+}
+
+function getPdfHtml() {
+  // ใช้ร่วมกันระหว่าง print และ download
+  return exportPDF(true);
+}
+
+function downloadPDF() {
+  const html = exportPDF(true);
+  if (!html) return;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const fromDate = new Date(document.getElementById('pdfDateFrom').value);
+  const dateStr  = isNaN(fromDate) ? formatDateInput(new Date()) : formatDateInput(fromDate);
+  a.href     = url;
+  a.download = `รายงานสาธารณภัย_${dateStr}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ---- Add Incident Modal ----
@@ -1040,7 +1140,7 @@ function goToLatestIncident() {
 }
 
 // ---- Export PDF (Print Window) ----
-function exportPDF() {
+function exportPDF(returnHtml = false) {
   const orgName   = document.getElementById('orgName').textContent;
   const fromDate  = new Date(document.getElementById('pdfDateFrom').value);
   const toDate    = new Date(document.getElementById('pdfDateTo').value);
@@ -1184,10 +1284,10 @@ function exportPDF() {
 </body>
 </html>`;
 
+  if (returnHtml) return html;
   const win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
-  // คืน focus กลับหน้าหลักหลัง print
   win.addEventListener('afterprint', () => { win.close(); window.focus(); });
   win.addEventListener('focus', () => { setTimeout(() => window.focus(), 300); });
 }
