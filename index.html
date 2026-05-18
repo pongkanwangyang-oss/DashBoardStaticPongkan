@@ -502,7 +502,11 @@
   <div class="table-section" id="tableSection">
     <div class="table-header">
       <h3>📋 รายการเหตุการณ์ล่าสุด</h3>
-      <div style="display:flex;gap:0.5rem">
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="tableSearch" placeholder="ค้นหา ชื่อ / หมู่บ้าน / ประเภท...">
+        </div>
         <button class="btn-export" id="exportBtn">⬇️ ส่งออก CSV</button>
       </div>
     </div>

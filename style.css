@@ -411,6 +411,29 @@ input[type="date"]:focus, select:focus { border-color: var(--accent); }
 }
 .btn-export:hover { border-color: var(--teal); color: var(--teal); }
 
+.search-box {
+  display: flex;
+  align-items: center;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  gap: 0.4rem;
+  transition: border-color 0.2s;
+}
+.search-box:focus-within { border-color: var(--accent); }
+.search-icon { font-size: 0.85rem; }
+.search-box input {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.85rem;
+  outline: none;
+  width: 200px;
+}
+.search-box input::placeholder { color: var(--text-muted); }
+
 .table-wrapper { overflow-x: auto; }
 .table-scrollable { max-height: 420px; overflow-y: auto; }
 

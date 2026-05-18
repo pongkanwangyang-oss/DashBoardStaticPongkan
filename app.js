@@ -80,6 +80,9 @@ function bindEvents() {
   document.getElementById('tvExit').addEventListener('click', toggleTvMode);
 
   document.getElementById('exportBtn').addEventListener('click', exportCSV);
+
+  // ค้นหาในตาราง
+  document.getElementById('tableSearch').addEventListener('input', renderTable);
   document.getElementById('pdfBtn').addEventListener('click', openPdfModal);
 
   // Add Incident Modal
@@ -536,8 +539,22 @@ function renderResponseChart() {
 
 // ---- Table ----
 function renderTable() {
-  const tbody = document.getElementById('incidentTableBody');
-  const rows  = filteredData.slice(0, 50);
+  const tbody   = document.getElementById('incidentTableBody');
+  const keyword = (document.getElementById('tableSearch')?.value || '').trim().toLowerCase();
+
+  let rows = filteredData;
+
+  // กรองตาม keyword
+  if (keyword) {
+    rows = rows.filter(inc => {
+      const type    = DISASTER_TYPES[inc.type]?.label || '';
+      const status  = inc.status === 'resolved' ? 'เสร็จสิ้น' : inc.status === 'ongoing' ? 'กำลังดำเนินการ' : 'มีการรับแจ้งเหตุ';
+      return [inc.location, inc.victimName, inc.houseNumber, inc.victimPhone, inc.details, type, status]
+        .some(v => (v || '').toLowerCase().includes(keyword));
+    });
+  }
+
+  rows = rows.slice(0, 50);
 
   tbody.innerHTML = rows.map(inc => {
     const dt = inc.date.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
@@ -661,6 +678,7 @@ function renderMap() {
 
     const statusLabel = { resolved: 'เสร็จสิ้น', ongoing: 'กำลังดำเนินการ', critical: '⚠️ มีการรับแจ้งเหตุ' };
     const victimInfo = inc.victimName ? `👤 ${inc.victimName}${inc.houseNumber ? `<br>🏠 ${inc.houseNumber}` : ''}<br>${inc.victimPhone ? `📞 ${inc.victimPhone}<br>` : ''}` : '';
+    const coordsInfo = (lat && lng) ? `<br>📌 ${lat.toFixed(6)}, ${lng.toFixed(6)}<br><a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:#4f8ef7">🗺️ เปิดใน Google Maps</a>` : '';
     marker.bindPopup(`
       <strong>${icon} ${DISASTER_TYPES[inc.type].label}</strong><br>
       📍 ${inc.location}<br>
@@ -669,6 +687,7 @@ function renderMap() {
       👥 ${inc.victims} ราย &nbsp;|&nbsp; ⏱️ ${inc.responseTime} นาที<br>
       สถานะ: ${statusLabel[inc.status] || inc.status}
       ${inc.details ? `<br><br>📝 ${inc.details}` : ''}
+      ${coordsInfo}
     `);
 
     marker.addTo(incidentMap);
