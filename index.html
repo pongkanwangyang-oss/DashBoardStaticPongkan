@@ -304,6 +304,17 @@
     </div>
   </div>
 
+  <!-- Incident Detail Modal -->
+  <div class="modal-overlay" id="incidentDetailModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="detailTitle">รายละเอียดเหตุการณ์</h3>
+        <button class="modal-close" id="detailModalClose">✕</button>
+      </div>
+      <div class="modal-body" id="detailModalBody"></div>
+    </div>
+  </div>
+
   <!-- Login Modal -->
   <div class="modal-overlay" id="loginModal">
     <div class="modal-box">
@@ -438,6 +449,10 @@
       <div class="chart-header">
         <h3>🗺️ แผนที่จุดเกิดเหตุ</h3>
         <div class="map-controls">
+          <div class="map-search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="mapSearch" placeholder="ค้นหา ชื่อ / หมู่บ้าน / ประเภท...">
+          </div>
           <button class="map-btn" id="mapFullscreen" title="ดูเต็มจอ">⛶</button>
           <button class="map-btn" id="mapLatest" title="กลับไปที่เทศบาลตำบลวังยาง">🏠</button>
           <div class="map-legend" id="mapLegend"></div>
