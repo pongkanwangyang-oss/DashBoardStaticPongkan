@@ -403,7 +403,7 @@ function renderDonutChart() {
       maintainAspectRatio: false,
       cutout: '60%',
       plugins: {
-        legend: { position: 'right', labels: { color: '#8892b0', font: { family: 'Sarabun', size: 11 }, padding: 10, boxWidth: 12 } },
+        legend: { position: 'bottom', labels: { color: '#8892b0', font: { family: 'Sarabun', size: 11 }, padding: 12, boxWidth: 12 } },
         datalabels: {
           color: '#fff',
           font: { family: 'Sarabun', size: 10, weight: 'bold' },

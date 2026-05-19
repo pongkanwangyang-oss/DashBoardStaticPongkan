@@ -334,8 +334,8 @@ input[type="date"]:focus, select:focus { border-color: var(--accent); }
 /* ===== Summary Row ===== */
 .summary-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
   padding: 0 1.5rem 1.25rem;
 }
 
@@ -343,14 +343,14 @@ input[type="date"]:focus, select:focus { border-color: var(--accent); }
   background: linear-gradient(135deg, var(--bg2), var(--bg3));
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
-.summary-icon { font-size: 1.75rem; }
-.summary-value { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
-.summary-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+.summary-icon { font-size: 1.5rem; }
+.summary-value { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+.summary-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
 
 /* ===== Charts Grid ===== */
 .charts-grid {
@@ -358,6 +358,7 @@ input[type="date"]:focus, select:focus { border-color: var(--accent); }
   grid-template-columns: repeat(12, 1fr);
   gap: 1rem;
   padding: 0 1.5rem 1.25rem;
+  align-items: stretch;
 }
 
 .chart-card {
@@ -379,6 +380,18 @@ input[type="date"]:focus, select:focus { border-color: var(--accent); }
 
 .chart-container { position: relative; width: 100%; height: 240px; }
 .chart-sm { height: 220px; }
+
+/* Donut chart — fills full card height */
+.chart-card-flex {
+  display: flex;
+  flex-direction: column;
+}
+.chart-container-flex {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 240px;
+}
 
 /* ===== Table ===== */
 .table-section {
@@ -598,7 +611,9 @@ body.tv-mode .tv-date-label { display: block; }
   .kpi-card { padding: 0.75rem; }
   .kpi-value { font-size: 1.3rem; }
   .kpi-icon  { font-size: 1.4rem; }
-  .summary-row { grid-template-columns: repeat(2, 1fr); }
+  .summary-row { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+  .summary-value { font-size: 1.1rem; }
+  .summary-icon { font-size: 1.25rem; }
 }
 
 /* ===== Map ===== */
